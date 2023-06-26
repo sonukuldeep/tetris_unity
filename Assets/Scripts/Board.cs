@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.Tilemaps;
+using TMPro;
 public class Board : MonoBehaviour
 {
     public Tilemap tilemap { get; private set; }
@@ -7,6 +8,14 @@ public class Board : MonoBehaviour
     public TetrominoData[] tetrominos;
     public Vector3Int spawnPosition;
     public Vector2Int boardSize = new Vector2Int(10, 20);
+    public GameObject dialogMenuPanel;
+    public GameObject publishScore;
+    public TextMeshProUGUI Score;
+    public TextMeshProUGUI Score2;
+    public TextMeshProUGUI Score3;
+    public float pointsPerSecond = 10f; // Points earned per second
+    private float points; // Total points accumulated
+    private Dan.Demo.SaveScore saveScore;
 
 
     public RectInt Bounds
@@ -21,6 +30,7 @@ public class Board : MonoBehaviour
     {
         this.tilemap = GetComponentInChildren<Tilemap>();
         this.activePiece = GetComponentInChildren<Piece>();
+        saveScore = GetComponent<Dan.Demo.SaveScore>();
 
         for (int i = 0; i < this.tetrominos.Length; i++)
         {
@@ -32,13 +42,20 @@ public class Board : MonoBehaviour
         SpawnPiece();
     }
 
+    private void Update()
+    {
+        points += Time.deltaTime * pointsPerSecond;
+        Score3.text = "Your score: " + (int)points;
+
+    }
+
     public void SpawnPiece()
     {
         int random = Random.Range(0, this.tetrominos.Length);
         TetrominoData data = this.tetrominos[random];
         this.activePiece.Initialize(this, this.spawnPosition, data);
 
-        if(IsValidPosition(this.activePiece, this.spawnPosition))
+        if (IsValidPosition(this.activePiece, this.spawnPosition))
         {
             Set(this.activePiece);
         }
@@ -50,8 +67,30 @@ public class Board : MonoBehaviour
 
     private void GameOver()
     {
-        //gameoverlogic
+        Debug.Log("game over");
+        dialogMenuPanel.SetActive(true);
+        Score.text = "Your score: " + (int)points;
+        Score2.text = "Your score: " + (int)points;
+        Time.timeScale = 0f;
+    }
+
+    public void RestartGame()
+    {
+        Time.timeScale = 1f;
+        dialogMenuPanel.SetActive(false);
         this.tilemap.ClearAllTiles();
+        points = 0;
+    }
+
+    public void SubmitScore()
+    {
+        saveScore.SetNameAndScore((int)points);
+    }
+
+    public void TogglePublishScoreUI()
+    {
+        publishScore.SetActive(true);
+
     }
 
 
@@ -104,6 +143,7 @@ public class Board : MonoBehaviour
             if (IsLineFull(row))
             {
                 LineClear(row);
+                points += 100;
             }
             else
             {
